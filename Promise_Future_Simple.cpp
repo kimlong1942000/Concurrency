@@ -6,7 +6,6 @@
 void calculateSquare(std::promise<int> prom, int value) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     int result = value * value;
-    // Gửi kết quả qua promise
     prom.set_value(result);
 }
 
@@ -16,14 +15,17 @@ int main() {
 
     int number = 66;
 
-    // Khởi tạo thread và truyền promise vào
     std::thread t(calculateSquare, std::move(prom), number);
 
-    // Trong thread chính, chờ kết quả từ future
-    std::cout << "Waiting for the result..." << std::endl;
-    int square = fut.get(); 
+    // Chờ tối đa 1 giây
+    auto status = fut.wait_for(std::chrono::seconds(1));
+    if (status == std::future_status::ready) {
+        int result = fut.get();
+        std::cout << "Main: Nhận được kết quả: " << result << "\n";
+    } else {
+        std::cout << "Main: Timeout! Chưa nhận được kết quả.\n";
+    }
 
-    std::cout << "The square of " << number << " is " << square << std::endl;
     t.join();
 
     return 0;
